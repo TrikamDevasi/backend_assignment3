@@ -1,0 +1,2 @@
+# Middlewares directory
+# Reserved for custom Express middleware (e.g., auth, validation, error handling)
