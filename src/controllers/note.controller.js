@@ -15,5 +15,10 @@ const createNote = async (req, res) => {
     const created = await Note.insertMany(notes);
     return res.status(201).json({ success: true, message: `${created.length} notes created successfully`, data: created });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};const getAllNotes = async (req, res) => {
+  try {
+    const notes = await Note.find();
+    return res.status(200).json({ success: true, message: "Notes fetched successfully", count: notes.length, data: notes });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-module.exports = { createNote, createBulkNotes };
+module.exports = { createNote, createBulkNotes, getAllNotes };
