@@ -28,5 +28,15 @@ const createNote = async (req, res) => {
     if (!note) return res.status(404).json({ success: false, message: "Note not found", data: null });
     return res.status(200).json({ success: true, message: "Note fetched successfully", data: note });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};const replaceNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: "Invalid note ID", data: null });
+    const { title, content, category, isPinned } = req.body;
+    if (!title || !content) return res.status(400).json({ success: false, message: "Title and content are required", data: null });
+    const note = await Note.findByIdAndUpdate(id, { title, content, category, isPinned }, { new: true, overwrite: true, runValidators: true });
+    if (!note) return res.status(404).json({ success: false, message: "Note not found", data: null });
+    return res.status(200).json({ success: true, message: "Note replaced successfully", data: note });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-module.exports = { createNote, createBulkNotes, getAllNotes, getNoteById };
+module.exports = { createNote, createBulkNotes, getAllNotes, getNoteById, replaceNote };
