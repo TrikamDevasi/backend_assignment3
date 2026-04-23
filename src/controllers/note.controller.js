@@ -10,7 +10,6 @@ const createNote = async (req, res) => {
     return res.status(201).json({ success: true, message: "Note created successfully", data: note });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const createBulkNotes = async (req, res) => {
   try {
     const { notes } = req.body;
@@ -19,14 +18,12 @@ const createBulkNotes = async (req, res) => {
     return res.status(201).json({ success: true, message: `${created.length} notes created successfully`, data: created });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const getAllNotes = async (req, res) => {
   try {
     const notes = await Note.find();
     return res.status(200).json({ success: true, message: "Notes fetched successfully", count: notes.length, data: notes });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const getNoteById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -36,7 +33,6 @@ const getNoteById = async (req, res) => {
     return res.status(200).json({ success: true, message: "Note fetched successfully", data: note });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const replaceNote = async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,7 +44,6 @@ const replaceNote = async (req, res) => {
     return res.status(200).json({ success: true, message: "Note replaced successfully", data: note });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
@@ -59,7 +54,6 @@ const updateNote = async (req, res) => {
     return res.status(200).json({ success: true, message: "Note updated successfully", data: note });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const deleteNote = async (req, res) => {
   try {
     const { id } = req.params;
@@ -69,7 +63,6 @@ const deleteNote = async (req, res) => {
     return res.status(200).json({ success: true, message: "Note deleted successfully", data: null });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const deleteBulkNotes = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -79,9 +72,6 @@ const deleteBulkNotes = async (req, res) => {
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
 
-// ── SECTION 5 — SEARCH ────────────────────────────────────────────────────
-
-// 9. Search in title only
 const searchByTitle = async (req, res) => {
   try {
     const { q } = req.query;
@@ -90,8 +80,6 @@ const searchByTitle = async (req, res) => {
     return res.status(200).json({ success: true, message: `Search results for: ${q}`, count: notes.length, data: notes });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
-// 10. Search in content only
 const searchByContent = async (req, res) => {
   try {
     const { q } = req.query;
@@ -100,18 +88,73 @@ const searchByContent = async (req, res) => {
     return res.status(200).json({ success: true, message: `Content search results for: ${q}`, count: notes.length, data: notes });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
-// 11. Search in title AND content ($or)
 const searchAll = async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.status(400).json({ success: false, message: "Search query 'q' is required", data: null });
-    const notes = await Note.find({
-      $or: [
-        { title:   { $regex: q, $options: "i" } },
-        { content: { $regex: q, $options: "i" } },
-      ],
-    });
+    const notes = await Note.find({ $or: [{ title: { $regex: q, $options: "i" } }, { content: { $regex: q, $options: "i" } }] });
+    return res.status(200).json({ success: true, message: `Search results for: ${q}`, count: notes.length, data: notes });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};
+
+// ── SECTION 6 — TWO CONCEPTS COMBINED ────────────────────────────────────
+
+// 12. Filter + Sort
+const filterAndSort = async (req, res) => {
+  try {
+    const { category, isPinned, sortBy, order } = req.query;
+    const filter = {};
+    if (category) filter.category = category;
+    if (isPinned !== undefined) filter.isPinned = isPinned === "true";
+    const sortField = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+    const sortOrder = order === "asc" ? 1 : -1;
+    const notes = await Note.find(filter).sort({ [sortField]: sortOrder });
+    return res.status(200).json({ success: true, message: "Notes fetched successfully", count: notes.length, data: notes });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};
+
+// 13. Filter + Paginate
+const filterAndPaginate = async (req, res) => {
+  try {
+    const { category, isPinned, page, limit } = req.query;
+    const filter = {};
+    if (category) filter.category = category;
+    if (isPinned !== undefined) filter.isPinned = isPinned === "true";
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+    const total = await Note.countDocuments(filter);
+    const totalPages = Math.ceil(total / limitNum);
+    const notes = await Note.find(filter).skip(skip).limit(limitNum);
+    return res.status(200).json({ success: true, message: "Notes fetched successfully", data: notes, pagination: { total, page: pageNum, limit: limitNum, totalPages, hasNextPage: pageNum < totalPages, hasPrevPage: pageNum > 1 } });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};
+
+// 14. Sort + Paginate
+const sortAndPaginate = async (req, res) => {
+  try {
+    const { sortBy, order, page, limit } = req.query;
+    const sortField = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+    const sortOrder = order === "asc" ? 1 : -1;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+    const total = await Note.countDocuments();
+    const totalPages = Math.ceil(total / limitNum);
+    const notes = await Note.find().sort({ [sortField]: sortOrder }).skip(skip).limit(limitNum);
+    return res.status(200).json({ success: true, message: "Notes fetched successfully", data: notes, pagination: { total, page: pageNum, limit: limitNum, totalPages, hasNextPage: pageNum < totalPages, hasPrevPage: pageNum > 1 } });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};
+
+// 15. Search + Filter
+const searchAndFilter = async (req, res) => {
+  try {
+    const { q, category, isPinned } = req.query;
+    if (!q) return res.status(400).json({ success: false, message: "Search query 'q' is required", data: null });
+    const filter = { $or: [{ title: { $regex: q, $options: "i" } }, { content: { $regex: q, $options: "i" } }] };
+    if (category) filter.category = category;
+    if (isPinned !== undefined) filter.isPinned = isPinned === "true";
+    const notes = await Note.find(filter);
     return res.status(200).json({ success: true, message: `Search results for: ${q}`, count: notes.length, data: notes });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
@@ -119,4 +162,5 @@ const searchAll = async (req, res) => {
 module.exports = {
   createNote, createBulkNotes, getAllNotes, getNoteById, replaceNote, updateNote, deleteNote, deleteBulkNotes,
   searchByTitle, searchByContent, searchAll,
+  filterAndSort, filterAndPaginate, sortAndPaginate, searchAndFilter,
 };
