@@ -5,7 +5,7 @@ const {
   replaceNote, updateNote, deleteNote, deleteBulkNotes,
   searchByTitle, searchByContent, searchAll,
   filterAndSort, filterAndPaginate, sortAndPaginate, searchAndFilter,
-  searchSortPaginate,
+  searchSortPaginate, filterSortPaginate,
 } = require("../controllers/note.controller");
 
 router.post("/bulk",   createBulkNotes);
@@ -20,6 +20,7 @@ router.get("/filter-paginate",      filterAndPaginate);
 router.get("/sort-paginate",        sortAndPaginate);
 router.get("/search-filter",        searchAndFilter);
 router.get("/search-sort-paginate", searchSortPaginate);
+router.get("/filter-sort-paginate", filterSortPaginate);
 
 router.post("/",     createNote);
 router.get("/",      getAllNotes);
