@@ -71,7 +71,6 @@ const deleteBulkNotes = async (req, res) => {
     return res.status(200).json({ success: true, message: `${result.deletedCount} notes deleted successfully`, data: null });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
 const searchByTitle = async (req, res) => {
   try {
     const { q } = req.query;
@@ -96,10 +95,6 @@ const searchAll = async (req, res) => {
     return res.status(200).json({ success: true, message: `Search results for: ${q}`, count: notes.length, data: notes });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
-// ── SECTION 6 — TWO CONCEPTS COMBINED ────────────────────────────────────
-
-// 12. Filter + Sort
 const filterAndSort = async (req, res) => {
   try {
     const { category, isPinned, sortBy, order } = req.query;
@@ -112,41 +107,28 @@ const filterAndSort = async (req, res) => {
     return res.status(200).json({ success: true, message: "Notes fetched successfully", count: notes.length, data: notes });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
-// 13. Filter + Paginate
 const filterAndPaginate = async (req, res) => {
   try {
     const { category, isPinned, page, limit } = req.query;
     const filter = {};
     if (category) filter.category = category;
     if (isPinned !== undefined) filter.isPinned = isPinned === "true";
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 10;
-    const skip = (pageNum - 1) * limitNum;
-    const total = await Note.countDocuments(filter);
-    const totalPages = Math.ceil(total / limitNum);
+    const pageNum = parseInt(page) || 1; const limitNum = parseInt(limit) || 10; const skip = (pageNum - 1) * limitNum;
+    const total = await Note.countDocuments(filter); const totalPages = Math.ceil(total / limitNum);
     const notes = await Note.find(filter).skip(skip).limit(limitNum);
     return res.status(200).json({ success: true, message: "Notes fetched successfully", data: notes, pagination: { total, page: pageNum, limit: limitNum, totalPages, hasNextPage: pageNum < totalPages, hasPrevPage: pageNum > 1 } });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
-// 14. Sort + Paginate
 const sortAndPaginate = async (req, res) => {
   try {
     const { sortBy, order, page, limit } = req.query;
-    const sortField = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
-    const sortOrder = order === "asc" ? 1 : -1;
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 10;
-    const skip = (pageNum - 1) * limitNum;
-    const total = await Note.countDocuments();
-    const totalPages = Math.ceil(total / limitNum);
+    const sortField = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt"; const sortOrder = order === "asc" ? 1 : -1;
+    const pageNum = parseInt(page) || 1; const limitNum = parseInt(limit) || 10; const skip = (pageNum - 1) * limitNum;
+    const total = await Note.countDocuments(); const totalPages = Math.ceil(total / limitNum);
     const notes = await Note.find().sort({ [sortField]: sortOrder }).skip(skip).limit(limitNum);
     return res.status(200).json({ success: true, message: "Notes fetched successfully", data: notes, pagination: { total, page: pageNum, limit: limitNum, totalPages, hasNextPage: pageNum < totalPages, hasPrevPage: pageNum > 1 } });
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
-
-// 15. Search + Filter
 const searchAndFilter = async (req, res) => {
   try {
     const { q, category, isPinned } = req.query;
@@ -159,8 +141,94 @@ const searchAndFilter = async (req, res) => {
   } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
 };
 
+// ── SECTION 7 — THREE CONCEPTS COMBINED ──────────────────────────────────
+
+// 16. Search + Sort + Paginate
+const searchSortPaginate = async (req, res) => {
+  try {
+    const { q, sortBy, order, page, limit } = req.query;
+    if (!q) return res.status(400).json({ success: false, message: "Search query 'q' is required", data: null });
+    const filter = { $or: [{ title: { $regex: q, $options: "i" } }, { content: { $regex: q, $options: "i" } }] };
+    const sortField = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt"; const sortOrder = order === "asc" ? 1 : -1;
+    const pageNum = parseInt(page) || 1; const limitNum = parseInt(limit) || 10; const skip = (pageNum - 1) * limitNum;
+    const total = await Note.countDocuments(filter); const totalPages = Math.ceil(total / limitNum);
+    const notes = await Note.find(filter).sort({ [sortField]: sortOrder }).skip(skip).limit(limitNum);
+    return res.status(200).json({ success: true, message: `Search results for: ${q}`, data: notes, pagination: { total, page: pageNum, limit: limitNum, totalPages, hasNextPage: pageNum < totalPages, hasPrevPage: pageNum > 1 } });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};
+
+// 17. Filter + Sort + Paginate
+const filterSortPaginate = async (req, res) => {
+  try {
+    const { category, isPinned, sortBy, order, page, limit } = req.query;
+    const filter = {};
+    if (category) filter.category = category;
+    if (isPinned !== undefined) filter.isPinned = isPinned === "true";
+    const sortField = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt"; const sortOrder = order === "asc" ? 1 : -1;
+    const pageNum = parseInt(page) || 1; const limitNum = parseInt(limit) || 10; const skip = (pageNum - 1) * limitNum;
+    const total = await Note.countDocuments(filter); const totalPages = Math.ceil(total / limitNum);
+    const notes = await Note.find(filter).sort({ [sortField]: sortOrder }).skip(skip).limit(limitNum);
+    return res.status(200).json({ success: true, message: "Notes fetched successfully", data: notes, pagination: { total, page: pageNum, limit: limitNum, totalPages, hasNextPage: pageNum < totalPages, hasPrevPage: pageNum > 1 } });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message, data: null }); }
+};
+
+// ── MASTER ENDPOINT ───────────────────────────────────────────────────────
+
+// 18. GET /api/notes/query — Search + Filter + Sort + Paginate
+const masterQuery = async (req, res) => {
+  try {
+    const { q, category, isPinned, sortBy, order, page, limit } = req.query;
+
+    // Step 1 — Build filter
+    const filter = {};
+    if (q) {
+      filter.$or = [
+        { title:   { $regex: q, $options: "i" } },
+        { content: { $regex: q, $options: "i" } },
+      ];
+    }
+    if (category)              filter.category = category;
+    if (isPinned !== undefined) filter.isPinned  = isPinned === "true";
+
+    // Step 2 — Sorting
+    const sortField = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : "createdAt";
+    const sortOrder = order === "asc" ? 1 : -1;
+
+    // Step 3 — Pagination
+    const pageNum  = parseInt(page)  || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip     = (pageNum - 1) * limitNum;
+
+    // Step 4 — Execute
+    const total      = await Note.countDocuments(filter);
+    const totalPages = Math.ceil(total / limitNum);
+    const notes      = await Note.find(filter)
+      .sort({ [sortField]: sortOrder })
+      .skip(skip)
+      .limit(limitNum);
+
+    return res.status(200).json({
+      success: true,
+      message: "Notes fetched successfully",
+      data: notes,
+      pagination: {
+        total,
+        page:        pageNum,
+        limit:       limitNum,
+        totalPages,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message, data: null });
+  }
+};
+
 module.exports = {
   createNote, createBulkNotes, getAllNotes, getNoteById, replaceNote, updateNote, deleteNote, deleteBulkNotes,
   searchByTitle, searchByContent, searchAll,
   filterAndSort, filterAndPaginate, sortAndPaginate, searchAndFilter,
+  searchSortPaginate, filterSortPaginate,
+  masterQuery,
 };

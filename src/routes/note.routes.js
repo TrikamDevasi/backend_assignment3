@@ -5,6 +5,7 @@ const {
   replaceNote, updateNote, deleteNote, deleteBulkNotes,
   searchByTitle, searchByContent, searchAll,
   filterAndSort, filterAndPaginate, sortAndPaginate, searchAndFilter,
+  searchSortPaginate,
 } = require("../controllers/note.controller");
 
 router.post("/bulk",   createBulkNotes);
@@ -14,11 +15,11 @@ router.get("/search/content", searchByContent);
 router.get("/search/all",     searchAll);
 router.get("/search",         searchByTitle);
 
-// Two-concept combination routes
-router.get("/filter-sort",     filterAndSort);
-router.get("/filter-paginate", filterAndPaginate);
-router.get("/sort-paginate",   sortAndPaginate);
-router.get("/search-filter",   searchAndFilter);
+router.get("/filter-sort",          filterAndSort);
+router.get("/filter-paginate",      filterAndPaginate);
+router.get("/sort-paginate",        sortAndPaginate);
+router.get("/search-filter",        searchAndFilter);
+router.get("/search-sort-paginate", searchSortPaginate);
 
 router.post("/",     createNote);
 router.get("/",      getAllNotes);
