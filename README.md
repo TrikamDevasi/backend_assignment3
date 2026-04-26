@@ -61,6 +61,11 @@ npm start     # production
 
 Server starts on `http://localhost:5000`
 
+### Postman Documentation
+
+- **Published API Docs:** [Postman Documentation](https://documenter.getpostman.com/view/50840761/2sBXwpMWHq)
+- **Collection JSON File:** [postman_collection.json](./postman_collection.json)
+
 ---
 
 ## API Endpoints
